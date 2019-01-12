@@ -2,7 +2,7 @@ package api
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/jacobkaufmann/arxivlib-papers/datastore"
+	"github.com/jacobkaufmann/arxivlib-papers/pkg/datastore"
 )
 
 var (

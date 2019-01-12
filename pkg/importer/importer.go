@@ -2,7 +2,7 @@ package importer
 
 import (
 	arxivlib "github.com/jacobkaufmann/arxivlib-papers"
-	"github.com/jacobkaufmann/arxivlib-papers/datastore"
+	"github.com/jacobkaufmann/arxivlib-papers/pkg/datastore"
 )
 
 // Fetchers maintains a collection of all active fetchers
