@@ -89,9 +89,9 @@ var (
 
 // A PaperListOptions represents a search filter for listing papers
 type PaperListOptions struct {
-	Title      string    `json:"title,omitempty"`
-	Author     string    `json:"author,omitempty"`
-	Updated    time.Time `json:"updated,omitempty"`
-	Abstract   string    `json:"abstract,omitempty"`
-	Categories []string  `json:"categories,omitempty"`
+	Title      string    `json:"title,omitempty" form:"title,omitempty"`
+	Author     string    `json:"author,omitempty" form:"author,omitempty"`
+	Updated    time.Time `json:"updated,omitempty" form:"updated,omitempty"`
+	Abstract   string    `json:"abstract,omitempty" form:"abstract,omitempty"`
+	Categories []string  `json:"categories,omitempty" form:"categories,omitempty"`
 }
