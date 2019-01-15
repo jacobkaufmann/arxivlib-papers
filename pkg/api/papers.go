@@ -53,5 +53,17 @@ func servePapers(c *gin.Context) {
 }
 
 func uploadPaper(c *gin.Context) {
+	var paper arxivlib.Paper
+	if err := c.ShouldBindJSON(&paper); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
 
+	_, err := store.Papers.Upload(&paper)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, err.Error())
+		log.Println(err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"status": "paper uploaded successfully"})
 }
