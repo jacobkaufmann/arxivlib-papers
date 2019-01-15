@@ -5,9 +5,7 @@ import (
 	"github.com/jacobkaufmann/arxivlib-papers/pkg/datastore"
 )
 
-var (
-	store = datastore.NewDatastore(nil)
-)
+var store = datastore.NewDatastore(nil)
 
 // Handler handles incoming API requests
 func Handler() *gin.Engine {
@@ -15,7 +13,7 @@ func Handler() *gin.Engine {
 
 	m.GET("/api/papers/:id", servePaper)
 	m.GET("/api/papers", servePapers)
-	// m.POST("/api/papers", uploadPaper)
+	m.POST("/api/papers", uploadPaper)
 
 	return m
 }
