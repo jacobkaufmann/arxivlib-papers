@@ -29,13 +29,13 @@ func servePaper(c *gin.Context) {
 }
 
 func servePapers(c *gin.Context) {
-	opt := &arxivlib.PaperListOptions{}
-	if err := c.ShouldBindQuery(opt); err != nil {
+	opt := arxivlib.PaperListOptions{}
+	if err := c.ShouldBindQuery(&opt); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	papers, err := store.Papers.List(opt)
+	papers, err := store.Papers.List(&opt)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, err.Error())
 		log.Println(err)
