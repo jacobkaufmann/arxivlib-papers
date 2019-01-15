@@ -21,8 +21,7 @@ type category struct {
 	subcategory string
 }
 
-var client *arxiv.Client
-
+// Fetch papers for category
 func (c *category) Fetch() ([]*arxivlib.Paper, error) {
 	searchOpt := arxiv.SearchOptions{}
 	searchOpt.Category = c.String()
@@ -35,7 +34,7 @@ func (c *category) Fetch() ([]*arxivlib.Paper, error) {
 	opt.Search = searchOpt.String()
 	opt.QueryOptions = queryOpt
 
-	client = arxiv.NewClient(nil)
+	client := arxiv.NewClient(nil)
 	eprints, err := client.Eprints.List(opt)
 	if err != nil {
 		return nil, err
