@@ -3,6 +3,7 @@ package datastore
 import (
 	"context"
 	"fmt"
+	"time"
 
 	arxivlib "github.com/jacobkaufmann/arxivlib-papers"
 	"github.com/mongodb/mongo-go-driver/bson"
@@ -19,7 +20,8 @@ func (s *papersStore) Get(id primitive.ObjectID) (*arxivlib.Paper, error) {
 
 	filter := bson.M{"_id": id}
 
-	err := coll.FindOne(context.Background(), filter).Decode(&paper)
+	ctx, _ := context.WithTimeout(context.Background(), 5*time.Second)
+	err := coll.FindOne(ctx, filter).Decode(&paper)
 	if err != nil {
 		return nil, err
 	}
@@ -56,10 +58,8 @@ func (s *papersStore) List(opt *arxivlib.PaperListOptions) ([]*arxivlib.Paper, e
 		filter = append(filter, bson.D{{"authors", bson.D{{"$in", auths}}}}...)
 	}
 
-	cursor, err := coll.Find(
-		context.Background(),
-		filter,
-	)
+	ctx, _ := context.WithTimeout(context.Background(), 5*time.Second)
+	cursor, err := coll.Find(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
@@ -84,7 +84,8 @@ func (s *papersStore) Update(paper *arxivlib.Paper) (bool, error) {
 
 	filter := bson.M{"_id": paper.ID}
 
-	result, err := coll.UpdateOne(context.Background(), filter, paper)
+	ctx, _ := context.WithTimeout(context.Background(), 5*time.Second)
+	result, err := coll.UpdateOne(ctx, filter, paper)
 	if err != nil {
 		return false, err
 	} else if result.MatchedCount != 1 && result.ModifiedCount != 1 {
@@ -97,10 +98,8 @@ func (s *papersStore) Update(paper *arxivlib.Paper) (bool, error) {
 func (s *papersStore) Upload(paper *arxivlib.Paper) (bool, error) {
 	coll := s.db.Collection("papers")
 
-	_, err := coll.InsertOne(
-		context.Background(),
-		&paper,
-	)
+	ctx, _ := context.WithTimeout(context.Background(), 5*time.Second)
+	_, err := coll.InsertOne(ctx, paper)
 	if err != nil {
 		return false, err
 	}
