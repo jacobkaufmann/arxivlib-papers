@@ -15,7 +15,7 @@ type papersStore struct {
 }
 
 func (s *papersStore) Get(id primitive.ObjectID) (*arxivlib.Paper, error) {
-	coll := s.db.Collection("papers")
+	coll := s.db.Db.Collection("papers")
 	var paper *arxivlib.Paper
 
 	filter := bson.M{"_id": id}
@@ -33,29 +33,27 @@ func (s *papersStore) List(opt *arxivlib.PaperListOptions) ([]*arxivlib.Paper, e
 	if opt == nil {
 		opt = &arxivlib.PaperListOptions{}
 	}
-	coll := s.db.Collection("papers")
+	coll := s.db.Db.Collection("papers")
 	var papers []*arxivlib.Paper
 
-	filter := bson.D{
-		{"title", primitive.Regex{Pattern: opt.Title, Options: "i"}},
-		{"updated", bson.D{
-			{"$gte", opt.Updated},
-		}},
-		{"abstract", primitive.Regex{Pattern: opt.Abstract, Options: "i"}},
+	filter := bson.M{
+		"title": primitive.Regex{Pattern: opt.Title, Options: "i"},
+		"updated": bson.M{
+			"$gte": opt.Updated,
+		},
+		"abstract": primitive.Regex{Pattern: opt.Abstract, Options: "i"},
 	}
 
-	cats := bson.A{}
 	if len(opt.Categories) > 0 {
+		cats := bson.A{}
 		for i := 0; i < len(opt.Categories); i++ {
-			cats = append(cats, fmt.Sprintf("/%s/", opt.Categories[i]))
+			cats = append(cats, fmt.Sprintf("%s", opt.Categories[i]))
 		}
-		filter = append(filter, bson.D{{"categories", bson.D{{"$in", cats}}}}...)
+		filter["categories"] = bson.M{"$in": cats}
 	}
 
-	auths := bson.A{}
 	if opt.Author != "" {
-		auths = append(auths, fmt.Sprintf("/%s/", opt.Author))
-		filter = append(filter, bson.D{{"authors", bson.D{{"$in", auths}}}}...)
+		filter["authors"] = primitive.Regex{Pattern: opt.Author, Options: "i"}
 	}
 
 	ctx, _ := context.WithTimeout(context.Background(), 5*time.Second)
@@ -79,8 +77,8 @@ func (s *papersStore) List(opt *arxivlib.PaperListOptions) ([]*arxivlib.Paper, e
 	return papers, nil
 }
 
-func (s *papersStore) Update(paper *arxivlib.Paper) (bool, error) {
-	coll := s.db.Collection("papers")
+func (s *papersStore) Update(paper *arxivlib.Paper) (updated bool, err error) {
+	coll := s.db.Db.Collection("papers")
 
 	filter := bson.M{"_id": paper.ID}
 
@@ -95,11 +93,29 @@ func (s *papersStore) Update(paper *arxivlib.Paper) (bool, error) {
 	return true, nil
 }
 
-func (s *papersStore) Upload(paper *arxivlib.Paper) (bool, error) {
-	coll := s.db.Collection("papers")
+func (s *papersStore) Upload(paper *arxivlib.Paper) (uploaded bool, err error) {
+	coll := s.db.Db.Collection("papers")
 
 	ctx, _ := context.WithTimeout(context.Background(), 5*time.Second)
-	_, err := coll.InsertOne(ctx, paper)
+	_, err = coll.InsertOne(ctx, paper)
+	if err != nil {
+		return false, err
+	}
+
+	return true, nil
+}
+
+func (s *papersStore) UploadMany(papers []*arxivlib.Paper) (uploaded bool, err error) {
+	coll := s.db.Db.Collection("papers")
+
+	// Convert slice of type Paper to slice of type interface{} for insertion
+	many := make([]interface{}, len(papers))
+	for i, v := range papers {
+		many[i] = v
+	}
+
+	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
+	_, err = coll.InsertMany(ctx, many)
 	if err != nil {
 		return false, err
 	}
