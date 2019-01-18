@@ -21,6 +21,35 @@ type Paper struct {
 	Categories []string           `json:"categories"`
 }
 
+// PapersService interacts with the paper-related endpoints in arxivlib's API
+type PapersService interface {
+	// Get a paper
+	Get(id primitive.ObjectID) (*Paper, error)
+
+	// List papers
+	List(opt *PaperListOptions) ([]*Paper, error)
+
+	// Update a paper
+	Update(paper *Paper) (updated bool, err error)
+
+	// Upload a paper
+	Upload(paper *Paper) (created bool, err error)
+}
+
+var (
+	// ErrPaperNotFound is a failure to find a specified paper
+	ErrPaperNotFound = errors.New("paper not found")
+)
+
+// A PaperListOptions represents a search filter for listing papers
+type PaperListOptions struct {
+	Title      string    `json:"title,omitempty" form:"title,omitempty"`
+	Author     string    `json:"author,omitempty" form:"author,omitempty"`
+	Updated    time.Time `json:"updated,omitempty" form:"updated,omitempty"`
+	Abstract   string    `json:"abstract,omitempty" form:"abstract,omitempty"`
+	Categories []string  `json:"categories,omitempty" form:"categories,omitempty"`
+}
+
 var Subjects = map[string]string{
 	"physics": "Physics",
 	"math":    "Mathematics",
@@ -65,33 +94,4 @@ var Subcategories = map[string][]string{
 	"econ": []string{
 		"EM",
 	},
-}
-
-// PapersService interacts with the paper-related endpoints in arxivlib's API
-type PapersService interface {
-	// Get a paper
-	Get(id primitive.ObjectID) (*Paper, error)
-
-	// List papers
-	List(opt *PaperListOptions) ([]*Paper, error)
-
-	// Update a paper
-	Update(paper *Paper) (updated bool, err error)
-
-	// Upload a paper
-	Upload(paper *Paper) (created bool, err error)
-}
-
-var (
-	// ErrPaperNotFound is a failure to find a specified paper
-	ErrPaperNotFound = errors.New("paper not found")
-)
-
-// A PaperListOptions represents a search filter for listing papers
-type PaperListOptions struct {
-	Title      string    `json:"title,omitempty" form:"title,omitempty"`
-	Author     string    `json:"author,omitempty" form:"author,omitempty"`
-	Updated    time.Time `json:"updated,omitempty" form:"updated,omitempty"`
-	Abstract   string    `json:"abstract,omitempty" form:"abstract,omitempty"`
-	Categories []string  `json:"categories,omitempty" form:"categories,omitempty"`
 }
