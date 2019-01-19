@@ -62,7 +62,7 @@ func uploadPaper(c *gin.Context) {
 	_, err := store.Papers.Upload(&paper)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, err.Error())
-		log.Println(err)
+		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{"status": "paper uploaded successfully"})
