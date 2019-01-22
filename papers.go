@@ -33,7 +33,7 @@ type PapersService interface {
 	Update(paper *Paper) (updated bool, err error)
 
 	// Upload a paper
-	Upload(paper *Paper) (created bool, err error)
+	Upload(paper *Paper) (uploaded bool, err error)
 }
 
 var (
