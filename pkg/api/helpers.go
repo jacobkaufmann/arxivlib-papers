@@ -8,7 +8,7 @@ import (
 // writeJSON writes a JSON Content-Type header and a JSON-encoded object to the
 // http.ResponseWriter.
 func writeJSON(w http.ResponseWriter, v interface{}) error {
-	// Indent the JSON so it's easier to read for hackers.
+	// Indent the JSON so it's easier to read
 	data, err := json.MarshalIndent(v, "", "  ")
 	if err != nil {
 		return err
