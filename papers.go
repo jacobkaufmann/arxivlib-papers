@@ -34,6 +34,12 @@ type PapersService interface {
 
 	// Upload a paper
 	Upload(paper *Paper) (uploaded bool, err error)
+
+	// Upload multiple papers
+	UploadMany(papers []*Paper) (uploaded bool, err error)
+
+	// Remove a paper
+	Remove(id primitive.ObjectID) (removed bool, err error)
 }
 
 var (
