@@ -1,22 +1,19 @@
 package datastore
 
 import (
-	"context"
-	"errors"
-	"fmt"
 	"log"
-	"os"
 	"sync"
 
-	"github.com/mongodb/mongo-go-driver/mongo"
-	"github.com/mongodb/mongo-go-driver/mongo/readpref"
+	"github.com/jmoiron/modl"
+	"github.com/jmoiron/sqlx"
+	_ "github.com/lib/pq"
 )
 
-// client is the database client
-var client *mongo.Client
-
 // DB is the global database
-var DB *mongo.Database
+var DB = &modl.DbMap{Dialect: modl.PostgresDialect{}}
+
+// DBH is a modl.SqlExecutor interface to DB, the global database
+var DBH modl.SqlExecutor = DB
 
 var connectOnce sync.Once
 
@@ -24,47 +21,44 @@ var connectOnce sync.Once
 // variables. It calls log.Fatal if it encounters an error.
 func Connect() {
 	connectOnce.Do(func() {
-		_, err := getDBCredentialsFromEnv()
+		var err error
+		connStr := "user=postgres dbname=arxivlib sslmode=verify-full"
+		DB.Dbx, err = sqlx.Open("postgres", connStr)
 		if err != nil {
-			log.Fatal(err)
+			log.Fatal("Error connecting to PostgreSQL database: ", err)
 		}
-
-		client, err = mongo.Connect(context.Background(), "mongodb://localhost:27017")
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		err = client.Ping(context.Background(), readpref.Primary())
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		DB = client.Database("arxivlib")
+		DB.Db = DB.Dbx.DB
 	})
 }
 
-var (
-	// ErrDBCredentialsNotFound is an environment variable retrieval failure
-	// that occurred after a call to the os
-	ErrDBCredentialsNotFound = errors.New("database credentials not found")
-
-	// ErrDuplicateKey is a database write failure that occurred after an
-	// attempted collection insert would violate a unique index constraint
-	ErrDuplicateKey = errors.New("duplicate key")
-)
-
-func getDBCredentialsFromEnv() (string, error) {
-	var uri string
-	user := os.Getenv("MONGO_INITDB_ROOT_USERNAME")
-	if user == "" {
-		return "", ErrDBCredentialsNotFound
+// transact calls fn in a DB transaction. If dbh is a transaction, then it just
+// calls the function. Otherwise, it begins a transaction, rolling back on
+// failure and committing on success.
+func transact(dbh modl.SqlExecutor, fn func(dbh modl.SqlExecutor) error) error {
+	var sharedTx bool
+	tx, sharedTx := dbh.(*modl.Transaction)
+	if !sharedTx {
+		var err error
+		tx, err = dbh.(*modl.DbMap).Begin()
+		if err != nil {
+			return err
+		}
+		defer func() {
+			if err != nil {
+				tx.Rollback()
+			}
+		}()
 	}
 
-	passwd := os.Getenv("MONGO_INITDB_ROOT_PASSWORD")
-	if passwd == "" {
-		return "", ErrDBCredentialsNotFound
+	if err := fn(tx); err != nil {
+		return err
 	}
-	uri = fmt.Sprintf("mongodb://%s:%s@localhost:27017/arxivlib", user, passwd)
 
-	return uri, nil
+	if !sharedTx {
+		if err := tx.Commit(); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
