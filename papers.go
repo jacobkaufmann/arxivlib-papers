@@ -9,7 +9,7 @@ import (
 
 // An Paper is a research Paper residing in arXiv
 type Paper struct {
-	ID         primitive.ObjectID `json:"id" bson:"_id,omitempty"`
+	ID         primitive.ObjectID `json:"_id"`
 	ArxivID    string             `json:"arxiv_id"`
 	Title      string             `json:"title"`
 	Published  time.Time          `json:"published"`
@@ -19,6 +19,7 @@ type Paper struct {
 	LinkPDF    string             `json:"link_pdf"`
 	LinkPage   string             `json:"link_page"`
 	Categories []string           `json:"categories"`
+	Ratings    []Rating           `json:"ratings"`
 }
 
 // PapersService interacts with the paper-related endpoints in arxivlib's API
@@ -32,11 +33,8 @@ type PapersService interface {
 	// Update a paper
 	Update(paper *Paper) (updated bool, err error)
 
-	// Upload a paper
-	Upload(paper *Paper) (uploaded bool, err error)
-
-	// Upload multiple papers
-	UploadMany(papers []*Paper) (uploaded bool, err error)
+	// Upload paper(s)
+	Upload(paper []*Paper) (uploaded bool, err error)
 
 	// Remove a paper
 	Remove(id primitive.ObjectID) (removed bool, err error)
