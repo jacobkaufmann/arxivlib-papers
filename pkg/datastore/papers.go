@@ -2,12 +2,14 @@ package datastore
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
 	arxivlib "github.com/jacobkaufmann/arxivlib-papers"
 	"github.com/mongodb/mongo-go-driver/bson"
 	"github.com/mongodb/mongo-go-driver/bson/primitive"
+	"github.com/mongodb/mongo-go-driver/mongo/options"
 )
 
 type papersStore struct {
@@ -20,7 +22,8 @@ func (s *papersStore) Get(id primitive.ObjectID) (*arxivlib.Paper, error) {
 
 	filter := bson.M{"_id": id}
 
-	ctx, _ := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 	err := coll.FindOne(ctx, filter).Decode(&paper)
 	if err != nil {
 		return nil, err
@@ -56,8 +59,12 @@ func (s *papersStore) List(opt *arxivlib.PaperListOptions) ([]*arxivlib.Paper, e
 		filter["authors"] = primitive.Regex{Pattern: opt.Author, Options: "i"}
 	}
 
-	ctx, _ := context.WithTimeout(context.Background(), 5*time.Second)
-	cursor, err := coll.Find(ctx, filter)
+	opts := &options.FindOptions{}
+	opts = opts.SetSort(bson.M{"updated": -1})
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	cursor, err := coll.Find(ctx, filter, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -82,7 +89,8 @@ func (s *papersStore) Update(paper *arxivlib.Paper) (updated bool, err error) {
 
 	filter := bson.M{"_id": paper.ID}
 
-	ctx, _ := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 	result, err := coll.UpdateOne(ctx, filter, paper)
 	if err != nil {
 		return false, err
@@ -93,19 +101,7 @@ func (s *papersStore) Update(paper *arxivlib.Paper) (updated bool, err error) {
 	return true, nil
 }
 
-func (s *papersStore) Upload(paper *arxivlib.Paper) (uploaded bool, err error) {
-	coll := s.db.Db.Collection("papers")
-
-	ctx, _ := context.WithTimeout(context.Background(), 5*time.Second)
-	_, err = coll.InsertOne(ctx, paper)
-	if err != nil {
-		return false, err
-	}
-
-	return true, nil
-}
-
-func (s *papersStore) UploadMany(papers []*arxivlib.Paper) (uploaded bool, err error) {
+func (s *papersStore) Upload(papers []*arxivlib.Paper) (uploaded bool, err error) {
 	coll := s.db.Db.Collection("papers")
 
 	// Convert slice of type Paper to slice of type interface{} for insertion
@@ -114,10 +110,55 @@ func (s *papersStore) UploadMany(papers []*arxivlib.Paper) (uploaded bool, err e
 		many[i] = v
 	}
 
-	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
-	_, err = coll.InsertMany(ctx, many)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if len(many) > 1 {
+		_, err = coll.InsertMany(ctx, many)
+	} else {
+		_, err = coll.InsertOne(ctx, many[0])
+	}
+
 	if err != nil {
 		return false, err
+	}
+
+	return true, nil
+}
+
+func (s *papersStore) Remove(id primitive.ObjectID) (removed bool, err error) {
+	coll := s.db.Db.Collection("papers")
+	var paper *arxivlib.Paper
+
+	filter := bson.M{"_id": paper.ID}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	result, err := coll.DeleteOne(ctx, filter)
+	if err != nil {
+		return false, err
+	}
+	if result.DeletedCount != 1 {
+		return false, arxivlib.ErrPaperNotFound
+	}
+
+	return true, nil
+}
+
+func (s *papersStore) AddRating(id primitive.ObjectID, r *arxivlib.Rating) (added bool, err error) {
+	coll := s.db.Db.Collection("papers")
+
+	filter := bson.M{"_id": id}
+	update := bson.M{"$push": bson.M{"ratings": r}}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	result, err := coll.UpdateOne(ctx, filter, update)
+	if err != nil {
+		return false, err
+	} else if result.MatchedCount != 1 {
+		return false, arxivlib.ErrPaperNotFound
+	} else if result.ModifiedCount != 1 {
+		return false, errors.New("paper not updated")
 	}
 
 	return true, nil
