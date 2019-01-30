@@ -9,7 +9,7 @@ import (
 
 // An Paper is a research Paper residing in arXiv
 type Paper struct {
-	ID         primitive.ObjectID `json:"_id"`
+	ID         primitive.ObjectID `json:"_id" bson:"_id"`
 	ArxivID    string             `json:"arxiv_id"`
 	Title      string             `json:"title"`
 	Published  time.Time          `json:"published"`
@@ -52,4 +52,5 @@ type PaperListOptions struct {
 	Updated    time.Time `json:"updated,omitempty" form:"updated,omitempty"`
 	Abstract   string    `json:"abstract,omitempty" form:"abstract,omitempty"`
 	Categories []string  `json:"categories,omitempty" form:"categories,omitempty"`
+	MaxResults int       `json:"max_results,omitempty" form:"max_results,omitempty"`
 }
