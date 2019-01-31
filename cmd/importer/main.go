@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os"
 	"sync"
@@ -8,6 +9,12 @@ import (
 	"github.com/jacobkaufmann/arxivlib-papers/pkg/datastore"
 	"github.com/jacobkaufmann/arxivlib-papers/pkg/importer"
 )
+
+var port string
+
+func init() {
+	flag.StringVar(&port, "port", "8080", "port for server")
+}
 
 func main() {
 	fmt.Println("Connecting to database")
