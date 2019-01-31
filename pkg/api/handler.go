@@ -14,6 +14,7 @@ func Handler() *gin.Engine {
 	m.GET("/api/papers/:id", servePaper)
 	m.GET("/api/papers", servePapers)
 	m.POST("/api/papers", uploadPaper)
+	m.DELETE("/api/papers/:id", removePaper)
 
 	return m
 }

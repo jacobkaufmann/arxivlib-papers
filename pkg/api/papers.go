@@ -59,11 +59,28 @@ func uploadPaper(c *gin.Context) {
 		return
 	}
 
-	_, err := store.Papers.Upload(&paper)
+	papers := []*arxivlib.Paper{}
+	papers = append(papers, &paper)
+	_, err := store.Papers.Upload(papers)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, err.Error())
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{"status": "paper uploaded successfully"})
+}
+
+func removePaper(c *gin.Context) {
+	id := c.Param("id")
+
+	obj := [12]byte{}
+	copy(obj[:], id)
+
+	_, err := store.Papers.Remove(obj)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"status": "paper removed successfully"})
 }
