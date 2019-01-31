@@ -61,6 +61,9 @@ func (s *papersStore) List(opt *arxivlib.PaperListOptions) ([]*arxivlib.Paper, e
 
 	opts := &options.FindOptions{}
 	opts = opts.SetSort(bson.M{"updated": -1})
+	if opt.MaxResults > 0 {
+		opts.SetLimit(int64(opt.MaxResults))
+	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
