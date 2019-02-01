@@ -84,3 +84,24 @@ func removePaper(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"status": "paper removed successfully"})
 }
+
+func addRating(c *gin.Context) {
+	id := c.Param("id")
+
+	obj := [12]byte{}
+	copy(obj[:], id)
+
+	var rating arxivlib.Rating
+	if err := c.ShouldBindJSON(&rating); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	_, err := store.Papers.AddRating(obj, &rating)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"status": "rating added successfully"})
+}

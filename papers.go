@@ -22,6 +22,14 @@ type Paper struct {
 	Ratings    []Rating           `json:"ratings"`
 }
 
+// A Rating is a score given to a paper by a User
+type Rating struct {
+	UserID  primitive.ObjectID `json:"user_id" bson:"user_id"`
+	Score   int                `json:"score" bson:"score"`
+	Comment string             `json:"comment" bson:"comment"`
+	Date    time.Time          `json:"date" bson:"date"`
+}
+
 // PapersService interacts with the paper-related endpoints in arxivlib's API
 type PapersService interface {
 	// Get a paper
@@ -38,11 +46,17 @@ type PapersService interface {
 
 	// Remove a paper
 	Remove(id primitive.ObjectID) (removed bool, err error)
+
+	// Add a rating to a paper
+	AddRating(id primitive.ObjectID, r *Rating) (added bool, err error)
 }
 
 var (
 	// ErrPaperNotFound is a failure to find a specified paper
 	ErrPaperNotFound = errors.New("paper not found")
+
+	// ErrRatingNotFound is a failure to find a rating for a specified paper
+	ErrRatingNotFound = errors.New("rating not found")
 )
 
 // A PaperListOptions represents a search filter for listing papers
