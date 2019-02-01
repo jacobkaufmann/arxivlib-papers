@@ -9,7 +9,7 @@ import (
 )
 
 func init() {
-	for k, v := range arxivlib.Subcategories {
+	for k, v := range arxiv.Subcategories {
 		for i := 0; i < len(v); i++ {
 			Fetchers = append(Fetchers, &category{k, v[i]})
 		}
@@ -29,6 +29,7 @@ func (c *category) Fetch() ([]*arxivlib.Paper, error) {
 	queryOpt := arxiv.QueryOptions{}
 	queryOpt.SortBy = arxiv.DefaultSortBy
 	queryOpt.SortOrder = arxiv.DefaultSortOrder
+	queryOpt.MaxResults = 2000
 
 	opt := &arxiv.EprintListOptions{}
 	opt.Search = searchOpt.String()
@@ -59,7 +60,7 @@ func convertToPapers(eprints []*arxiv.Eprint) []*arxivlib.Paper {
 		p.Title = e.Title
 		p.Published = e.Published
 		p.Updated = e.Updated
-		p.Abstract = e.Abstract
+		p.Abstract = strings.Replace(strings.TrimSpace(e.Abstract), "\n", " ", -1)
 		p.Authors = []string{}
 		for j := 0; j < len(e.Authors); j++ {
 			p.Authors = append(p.Authors, e.Authors[j].Name)
