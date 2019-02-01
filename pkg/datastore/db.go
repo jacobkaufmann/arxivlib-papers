@@ -1,19 +1,24 @@
 package datastore
 
 import (
+	"context"
 	"log"
 	"sync"
+	"time"
 
-	"github.com/jmoiron/modl"
-	"github.com/jmoiron/sqlx"
-	_ "github.com/lib/pq"
+	"github.com/mongodb/mongo-go-driver/mongo"
+	"github.com/mongodb/mongo-go-driver/mongo/readpref"
 )
 
-// DB is the global database
-var DB = &modl.DbMap{Dialect: modl.PostgresDialect{}}
+// A Database holds a mongo.Database instance
+type Database struct {
+	Db *mongo.Database
+}
 
-// DBH is a modl.SqlExecutor interface to DB, the global database
-var DBH modl.SqlExecutor = DB
+// TODO: Fix structure of Database object
+
+// DB is the global database
+var DB = &Database{}
 
 var connectOnce sync.Once
 
@@ -22,43 +27,21 @@ var connectOnce sync.Once
 func Connect() {
 	connectOnce.Do(func() {
 		var err error
-		connStr := "user=postgres dbname=arxivlib sslmode=verify-full"
-		DB.Dbx, err = sqlx.Open("postgres", connStr)
+
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		client, err := mongo.Connect(ctx, "mongodb://localhost:27017")
 		if err != nil {
-			log.Fatal("Error connecting to PostgreSQL database: ", err)
+			log.Fatal(err)
 		}
-		DB.Db = DB.Dbx.DB
+
+		ctx, cancel = context.WithTimeout(context.Background(), 2*time.Second)
+		defer cancel()
+		err = client.Ping(ctx, readpref.Primary())
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		DB.Db = client.Database("arxivlib")
 	})
-}
-
-// transact calls fn in a DB transaction. If dbh is a transaction, then it just
-// calls the function. Otherwise, it begins a transaction, rolling back on
-// failure and committing on success.
-func transact(dbh modl.SqlExecutor, fn func(dbh modl.SqlExecutor) error) error {
-	var sharedTx bool
-	tx, sharedTx := dbh.(*modl.Transaction)
-	if !sharedTx {
-		var err error
-		tx, err = dbh.(*modl.DbMap).Begin()
-		if err != nil {
-			return err
-		}
-		defer func() {
-			if err != nil {
-				tx.Rollback()
-			}
-		}()
-	}
-
-	if err := fn(tx); err != nil {
-		return err
-	}
-
-	if !sharedTx {
-		if err := tx.Commit(); err != nil {
-			return err
-		}
-	}
-
-	return nil
 }
