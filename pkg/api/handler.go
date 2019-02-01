@@ -16,5 +16,7 @@ func Handler() *gin.Engine {
 	m.POST("/api/papers", uploadPaper)
 	m.DELETE("/api/papers/:id", removePaper)
 
+	m.POST("/api/papers:id/ratings", addRating)
+
 	return m
 }
