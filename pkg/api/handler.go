@@ -13,10 +13,10 @@ func Handler() *gin.Engine {
 
 	m.GET("/api/papers/:id", servePaper)
 	m.GET("/api/papers", servePapers)
-	m.POST("/api/papers", uploadPaper)
-	m.DELETE("/api/papers/:id", removePaper)
+	m.POST("/api/papers", serveUploadPaper)
+	m.DELETE("/api/papers/:id", serveRemovePaper)
 
-	m.POST("/api/papers:id/ratings", addRating)
+	m.POST("/api/papers:id/ratings", serveAddRating)
 
 	return m
 }

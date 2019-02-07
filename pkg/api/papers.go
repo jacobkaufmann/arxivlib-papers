@@ -52,7 +52,7 @@ func servePapers(c *gin.Context) {
 	}
 }
 
-func uploadPaper(c *gin.Context) {
+func serveUploadPaper(c *gin.Context) {
 	var paper arxivlib.Paper
 	if err := c.ShouldBindJSON(&paper); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -70,7 +70,7 @@ func uploadPaper(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": "paper uploaded successfully"})
 }
 
-func removePaper(c *gin.Context) {
+func serveRemovePaper(c *gin.Context) {
 	id := c.Param("id")
 
 	obj := [12]byte{}
@@ -85,7 +85,7 @@ func removePaper(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": "paper removed successfully"})
 }
 
-func addRating(c *gin.Context) {
+func serveAddRating(c *gin.Context) {
 	id := c.Param("id")
 
 	obj := [12]byte{}
